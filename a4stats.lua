@@ -238,6 +238,7 @@ function a4_log_msg_async(seen, quotereset, uarg)
 
             local slapped = {}
             table.insert(slapped, "slapped = slapped + 1")
+            table.insert(slapped, "highlights = highlights + 1")
 
             a4_update_user(a4_getchannelid(channel), a4_getaccount(targetnumeric), a4_getaccountid(targetnumeric), slapped)   
           end
@@ -245,6 +246,21 @@ function a4_log_msg_async(seen, quotereset, uarg)
       end
     else
       return
+    end
+  end
+
+  local target, targetnumeric
+  for nick in string.gmatch(message,'%S+') do
+    target = irc_getnickbynick(nick)
+
+    if target then
+      targetnumeric = target.numeric
+
+      if irc_nickonchan(targetnumeric, channel) then    
+        local highlight = { "highlights = highlights + 1" }
+
+        a4_update_user(a4_getchannelid(channel), a4_getaccount(targetnumeric), a4_getaccountid(targetnumeric), highlight)          
+      end
     end
   end
 
