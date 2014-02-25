@@ -28,6 +28,7 @@ local DB = "a4stats.db"
 
 local a4_bot
 local a4_channels = {}
+local a4_channelstate = {}
 
 function onload()
   onconnect()
@@ -107,6 +108,10 @@ function a4_sync_channels()
 end
 
 function a4_fetch_channel_cb(id, name, active, uarg)
+  if not a4_channelstate[name] then
+    a4_channelstate[name] = { skitzocounter = 0 }
+  end
+
   if active == 1 then
     a4_join_channel(id, name)
   elseif a4_is_stats_channel(name) then
@@ -214,6 +219,19 @@ function a4_log_msg_async(seen, quotereset, uarg)
   end
 
   table.insert(updates, "rating = rating + " .. rating_delta)
+
+  -- do skitzo checking
+  if a4_channelstate[channel]["skitzonumeric"] == numeric then
+    a4_channelstate[channel]["skitzocounter"] = a4_channelstate[channel]["skitzocounter"] + 1
+
+    if a4_channelstate[channel]["skitzocounter"] > 4 then
+      table.insert(updates, "skitzo = skitzo + 1")
+      a4_channelstate[channel]["skitzocounter"] = 0
+    end
+  else
+    a4_channelstate[channel]["skitzonumeric"] = numeric
+    a4_channelstate[channel]["skitzocounter"] = 0
+  end
 
   local action = false
   local ctcp_command, ctcp_param = string.match(message, "\1(%a+) ([^\1]+)\1")
