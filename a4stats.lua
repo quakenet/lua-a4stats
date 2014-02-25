@@ -200,6 +200,9 @@ function a4_log_msg_async(seen, quotereset, uarg)
   local numeric = uarg[2]
   local message = uarg[3]
 
+  local smileyhappy = {":)", ":-)", ":p", ":-p", ":P", ":-P", ":D", ":-D", ":}", ":-}", ":]", ":-]", ";)", ";-)", ";p", ";-p", ";P", ";-P", ";D", ";-D", ";}", ";-}", ";]", ";-]"}
+  local smileysad = {":(", ":-(", ":c", ":-c", ":C", ":-C", ":[", ":-[", ":{", ":-{", ";(", ";-(", ";c", ";-c", ";C", ";-C", ";[", ";-[", ";{", ";-{"}
+
   updates = {}
   a4_touchuser(updates, numeric)
 
@@ -232,6 +235,20 @@ function a4_log_msg_async(seen, quotereset, uarg)
 
     table.insert(updates, "quote = '" .. a4_escape_string(quote) .. "'")
     table.insert(updates, "quotereset = " .. os.time())
+  end
+
+  for _, s in pairs(smileyhappy) do
+    if string.find(message, s, 1, true) then
+      table.insert(updates, "mood_happy = mood_happy + 1")
+      break
+    end
+  end
+
+  for _, s in pairs(smileysad) do
+    if string.find(message, s, 1, true) then
+      table.insert(updates, "mood_sad = mood_sad + 1")
+      break
+    end
   end
 
   if string.sub(message, string.len(message)) == "?" then
