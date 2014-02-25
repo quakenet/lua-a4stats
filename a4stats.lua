@@ -221,6 +221,23 @@ function a4_log_msg_async(seen, quotereset, uarg)
       action = true
       message = ctcp_param
       table.insert(updates, "actions = actions + 1")
+
+      local slaps = false
+      local target, targetnumeric
+      for nick in string.gmatch(message,'%S+') do
+        target = irc_getnickbynick(nick)
+
+        if target then
+          targetnumeric = target.numeric
+
+          if irc_nickonchan(targetnumeric, channel) then
+            if not slaps then
+              slaps = true
+              table.insert(updates, "slaps = slaps + 1")
+            end   
+          end
+        end
+      end
     else
       return
     end
