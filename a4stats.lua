@@ -202,6 +202,7 @@ function a4_log_msg_async(seen, quotereset, uarg)
 
   local smileyhappy = {":)", ":-)", ":p", ":-p", ":P", ":-P", ":D", ":-D", ":}", ":-}", ":]", ":-]", ";)", ";-)", ";p", ";-p", ";P", ";-P", ";D", ";-D", ";}", ";-}", ";]", ";-]"}
   local smileysad = {":(", ":-(", ":c", ":-c", ":C", ":-C", ":[", ":-[", ":{", ":-{", ";(", ";-(", ";c", ";-c", ";C", ";-C", ";[", ";-[", ";{", ";-{"}
+  local foulmessage = {"fuck", "fick", "bitch", "shit", "cock", "dick", "stfu"}
 
   updates = {}
   a4_touchuser(updates, numeric)
@@ -285,6 +286,13 @@ function a4_log_msg_async(seen, quotereset, uarg)
   for _, s in pairs(smileysad) do
     if string.find(message, s, 1, true) then
       table.insert(updates, "mood_sad = mood_sad + 1")
+      break
+    end
+  end
+
+  for _, s in pairs(foulmessage) do
+    if string.find(message, s, 1, true) then
+      table.insert(updates, "foul = foul + 1")
       break
     end
   end
