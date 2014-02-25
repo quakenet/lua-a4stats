@@ -234,7 +234,12 @@ function a4_log_msg_async(seen, quotereset, uarg)
             if not slaps then
               slaps = true
               table.insert(updates, "slaps = slaps + 1")
-            end   
+            end
+
+            local slapped = {}
+            table.insert(slapped, "slapped = slapped + 1")
+
+            a4_update_user(a4_getchannelid(channel), a4_getaccount(targetnumeric), a4_getaccountid(targetnumeric), slapped)   
           end
         end
       end
