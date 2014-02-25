@@ -81,6 +81,16 @@ function onnterfacer(command, ...)
     end
  
     return 0, channels
+  elseif command == "chanmsg" then
+    local channel, message = ...
+
+    if not a4_is_stats_channel(channel) then
+      return 31, "Invalid channel"
+    end
+
+    irc_localchanmsg(a4_bot, channel, message)
+
+    return 0, "OK"
   end
 end
 
