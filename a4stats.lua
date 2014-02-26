@@ -338,6 +338,7 @@ function a4_log_msg_async(seen, quotereset, uarg)
 
   table.insert(updates, "last = '" .. a4_escape_string("TEXT " .. message) .. "'")
 
+  a4_add_line(channel, hour)
   a4_update_user(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), updates)
 end
 
