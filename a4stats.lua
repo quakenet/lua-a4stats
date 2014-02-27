@@ -39,6 +39,21 @@ function onconnect()
   a4_sync_channels()
 end
 
+function irctolowerasciic(code)
+  if code >= 65 and code <= 94 then
+    code = code + 32
+  end
+  return code
+end
+
+function irctolowerascii(string)
+  local codes = {}
+  for i = 1, #string do
+    table.insert(codes, irctolowerasciic(string.byte(string, i)))
+  end
+  return string.char(unpack(codes))
+end
+
 function onnterfacer(command, ...)
   if command == "enable_channel" then
     local channel = ...
@@ -100,7 +115,7 @@ function a4_is_stats_channel(channel)
 end
 
 function a4_getchannelid(channel)
-  return a4_channels[irctolower(channel)]
+  return a4_channels[irctolowerascii(channel)]
 end
 
 function a4_sync_channels()
@@ -121,7 +136,7 @@ end
 
 function a4_join_channel(id, channel)
   irc_localjoin(a4_bot, channel)
-  a4_channels[irctolower(channel)] = id
+  a4_channels[irctolowerascii(channel)] = id
 end
 
 function a4_int_enable_channel(channel)
@@ -131,7 +146,7 @@ end
 
 function a4_part_channel(channel)
   irc_localpart(a4_bot, channel)
-  a4_channels[irctolower(channel)] = nil
+  a4_channels[irctolowerascii(channel)] = nil
 end
 
 function a4_int_disable_channel(channel, part)
@@ -161,7 +176,7 @@ function statshandler(target, revent, ...)
   if revent == "irc_onchanmsg" then
     local numeric, channel, message = ...
 
-    channel = irctolower(channel)
+    channel = irctolowerascii(channel)
 
     if not a4_is_stats_channel(channel) then
       return
@@ -363,7 +378,7 @@ function a4_cmd_addchan(numeric, channel)
     return
   end
 
-  channel = irctolower(channel)
+  channel = irctolowerascii(channel)
 
   if not irc_getchaninfo(channel) then
     a4_notice(numeric, "The specified channel does not exist.")
@@ -386,7 +401,7 @@ function a4_cmd_delchan(numeric, channel)
     return
   end
 
-  channel = irctolower(channel)
+  channel = irctolowerascii(channel)
 
   if not a4_is_stats_channel(channel) then
     a4_notice(numeric, "The bot is not on that channel.")
@@ -434,7 +449,7 @@ function irc_ontopic(channel, numeric, message)
     return
   end
 
-  channel = irctolower(channel)
+  channel = irctolowerascii(channel)
 
   if not a4_is_stats_channel(channel) then
     return
@@ -453,7 +468,7 @@ function irc_onop(channel, numeric, victimnumeric)
     return
   end
 
-  channel = irctolower(channel)
+  channel = irctolowerascii(channel)
 
   if not a4_is_stats_channel(channel) then
     return
@@ -473,7 +488,7 @@ function irc_ondeop(channel, numeric, victimnumeric)
     return
   end
 
-  channel = irctolower(channel)
+  channel = irctolowerascii(channel)
 
   if not a4_is_stats_channel(channel) then
     return
@@ -493,7 +508,7 @@ function irc_onkickall(channel, kicked_numeric, kicker_numeric, message)
 end
 
 function irc_onkick(channel, kicked_numeric, kicker_numeric, message)
-  channel = irctolower(channel)
+  channel = irctolowerascii(channel)
 
   if not a4_is_stats_channel(channel) then
     return
@@ -520,7 +535,7 @@ function irc_onkick(channel, kicked_numeric, kicker_numeric, message)
 end
 
 function irc_onpart(channel, numeric, message)
-  channel = irctolower(channel)
+  channel = irctolowerascii(channel)
 
   if not a4_is_stats_channel(channel) then
     return
