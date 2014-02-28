@@ -154,20 +154,6 @@ function a4_int_disable_channel(channel, part)
   a4_fetch_channels("a4_fetch_channel_cb", {})
 end
 
-function a4_split_message(message)
-  message, _ = message:gsub("^ +", "")
-  message, _ = message:gsub("  +", " ")
-  message, _ = message:gsub(" +$", "")
-
-  local tokens = {}
-
-  for token in string.gmatch(message, "%S+") do
-    table.insert(tokens, token)
-  end
-
-  return tokens
-end
-
 function a4_notice(numeric, text)
   irc_localnotice(a4_bot, numeric, text)
 end
@@ -183,27 +169,6 @@ function statshandler(target, revent, ...)
     end
 
     a4_log_msg(channel, numeric, message)
-  elseif revent == "irc_onmsg" then
-    local numeric, message = ...
-
-    local tokens = a4_split_message(message)
-
-    local command = tokens[1]:lower()
-    local argument = tokens[2]
-
-    if command then
-      if command == "help" then
-        a4_cmd_msghelp(numeric, argument)
-      elseif command == "showcommands" then
-        a4_cmd_msgshowcommands(numeric, argument)
-      elseif command == "addchan" and ontlz(numeric) then
-        a4_cmd_addchan(numeric, argument)
-      elseif command == "delchan" and ontlz(numeric) then
-        a4_cmd_delchan(numeric, argument)
-      else
-        a4_notice(numeric, "Not sure which command you're looking for, try /msg " .. BOTNICK .. " showcommands.")
-      end
-    end
   end
 end
 
@@ -355,62 +320,6 @@ function a4_log_msg_async(seen, quotereset, uarg)
 
   a4_add_line(channel, hour)
   a4_update_user(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), updates)
-end
-
-function a4_cmd_msghelp(numeric, victim)
-  a4_cmd_msgshowcommands(numeric, victim)
-end
-
-function a4_cmd_msgshowcommands(numeric, victim)
-  a4_notice(numeric, "Commands available to you:")
-  a4_notice(numeric, "help          - Get help.")
-  a4_notice(numeric, "showcommands  - Show this list.")
-
-  if ontlz(numeric) then
-    a4_notice(numeric, "addchan       - Adds me to a channel.")
-    a4_notice(numeric, "delchan       - Removes me from a channel.")
-  end
-end
-
-function a4_cmd_addchan(numeric, channel)
-  if not channel then
-    a4_notice(numeric, "Syntax: addchan <#channel>")
-    return
-  end
-
-  channel = irctolowerascii(channel)
-
-  if not irc_getchaninfo(channel) then
-    a4_notice(numeric, "The specified channel does not exist.")
-    return
-  end
-
-  if a4_is_stats_channel(channel) then
-    a4_notice(numeric, "The bot is already on that channel.")
-    return
-  end
-
-  a4_int_enable_channel(channel)
-
-  a4_notice(numeric, "Done.")
-end
-
-function a4_cmd_delchan(numeric, channel)
-  if not channel then
-    a4_notice(numeric, "Syntax: delchan <#channel>")
-    return
-  end
-
-  channel = irctolowerascii(channel)
-
-  if not a4_is_stats_channel(channel) then
-    a4_notice(numeric, "The bot is not on that channel.")
-    return
-  end
-
-  a4_int_disable_channel(channel, true)
-
-  a4_notice(numeric, "Done.")
 end
 
 function a4_getaccountid(numeric)
