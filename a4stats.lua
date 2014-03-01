@@ -15,8 +15,6 @@
 -- Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 -- TODO:
--- missing stats counters
--- hostmask for unauthed clients
 -- frontend
 -- clean up topics/kicks periodically
 
@@ -263,6 +261,7 @@ function a4_log_msg_async(seen, quotereset, uarg)
       action = true
       message = ctcp_param
       table.insert(updates, "actions = actions + 1")
+      table.insert(updates, "last = '" .. a4_escape_string("ACTION " .. message) .. "'")
 
       local slaps = false
       local target, targetnumeric
@@ -285,6 +284,8 @@ function a4_log_msg_async(seen, quotereset, uarg)
             a4_update_user(a4_getchannelid(channel), a4_getaccount(targetnumeric), a4_getaccountid(targetnumeric), slapped)   
           end
         end
+
+        return
       end
     else
       return
@@ -474,13 +475,13 @@ function irc_onkick(channel, kicked_numeric, kicker_numeric, message)
   updates = {}
   a4_touchuser(updates, kicker_numeric)
   table.insert(updates, "kicks = kicks + 1")
-  table.insert(updates, "last = '" .. a4_escape_string("KICK " .. message) .. "'")
+  table.insert(updates, "last = '" .. a4_escape_string("KICK " .. getnickbynumeric(kicker_numeric)  .. message) .. "'")
   a4_update_user(a4_getchannelid(channel), a4_getaccount(kicker_numeric), a4_getaccountid(kicker_numeric), updates);
 
   updates = {}
   a4_touchuser(updates, kicked_numeric)
   table.insert(updates, "kicked = kicked + 1")
-  table.insert(updates, "last = '" .. a4_escape_string("KICKED " .. message) .. "'")
+  table.insert(updates, "last = '" .. a4_escape_string("KICKED " .. getnickbynumeric(kicked_numeric) .. message) .. "'")
   a4_update_user(a4_getchannelid(channel), a4_getaccount(kicked_numeric), a4_getaccountid(kicked_numeric), updates);
 
   a4_add_kick(a4_getchannelid(channel), a4_getaccount(kicker_numeric), a4_getaccountid(kicker_numeric), a4_getaccount(kicked_numeric), a4_getaccountid(kicked_numeric), message)
