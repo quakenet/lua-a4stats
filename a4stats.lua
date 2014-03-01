@@ -475,13 +475,13 @@ function irc_onkick(channel, kicked_numeric, kicker_numeric, message)
   updates = {}
   a4_touchuser(updates, kicker_numeric)
   table.insert(updates, "kicks = kicks + 1")
-  table.insert(updates, "last = '" .. a4_escape_string("KICK " .. getnickbynumeric(kicker_numeric)  .. message) .. "'")
+  table.insert(updates, "last = '" .. a4_escape_string("KICK " .. irc_getnickbynumeric(kicked_numeric).nick .. " " .. message) .. "'")
   a4_update_user(a4_getchannelid(channel), a4_getaccount(kicker_numeric), a4_getaccountid(kicker_numeric), updates);
 
   updates = {}
   a4_touchuser(updates, kicked_numeric)
   table.insert(updates, "kicked = kicked + 1")
-  table.insert(updates, "last = '" .. a4_escape_string("KICKED " .. getnickbynumeric(kicked_numeric) .. message) .. "'")
+  table.insert(updates, "last = '" .. a4_escape_string("KICKED " .. irc_getnickbynumeric(kicker_numeric).nick .. " " .. message) .. "'")
   a4_update_user(a4_getchannelid(channel), a4_getaccount(kicked_numeric), a4_getaccountid(kicked_numeric), updates);
 
   a4_add_kick(a4_getchannelid(channel), a4_getaccount(kicker_numeric), a4_getaccountid(kicker_numeric), a4_getaccount(kicked_numeric), a4_getaccountid(kicked_numeric), message)
