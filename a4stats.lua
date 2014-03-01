@@ -54,6 +54,49 @@ function irctolowerascii(string)
   return string.char(unpack(codes))
 end
 
+function a4_maskhost(host)
+  local nickname, username, hostname
+  local fullmask = {}
+
+  local _, posnick = string.find(host, "!", 1, true)
+  if posnick then
+    nickname = string.sub(host, 1, posnick - 1)
+  end
+
+  -- determine username
+  local _, posuser = string.find(host, "@", 1, true)
+  if posuser then
+    username = string.sub(host, posnick + 1, posuser - 1)
+  end
+
+  username = string.gsub(username, "~", "*")
+
+  -- determine host from that user + 1 = host
+  hostname = string.sub(host, posuser + 1)
+
+  table.insert(fullmask, "*!")
+  table.insert(fullmask, username)
+  table.insert(fullmask, "@")
+  
+  -- determine if the host has 2 or more dots in it (long hostname or ip)
+  local _, count = string.gsub(hostname, "%.", "")
+
+  if count >= 2 then
+    local ip = string.match(hostname, "%d+.%d+.%d+.")
+    if ip then
+      hostname = ip .. "*"
+    else
+      local _, first = string.find(hostname, "%.")
+      hostname = "*" .. string.sub(hostname, first)
+    end
+  end
+  
+  table.insert(fullmask, hostname)
+
+  
+  return table.concat(fullmask)
+end
+
 function onnterfacer(command, ...)
   if command == "enable_channel" then
     local channel = ...
@@ -338,7 +381,7 @@ function a4_getaccount(numeric)
   if nick.accountid then
     id = nick.account
   else
-    local fullhost = irc_getvisiblehostmask(numeric)
+    local fullhost = a4_maskhost(irc_getvisiblehostmask(numeric))
     id = fullhost
   end
 
