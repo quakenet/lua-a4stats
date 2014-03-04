@@ -21,8 +21,6 @@
 local BOTNICK = "a4stats"
 local BOTACCOUNT = "a4stats"
 local BOTACCOUNTID = 0
-local HOMECHANNEL = "#a4stats"
-local DB = "a4stats.db"
 
 local a4_bot
 local a4_channels = {}
@@ -213,6 +211,35 @@ function statshandler(target, revent, ...)
   end
 end
 
+function a4_rb_new(count)
+  local result = { offset = 1, data = {} }
+
+  for k=1,count do
+    result.data[k] = { 0, 0 }
+  end
+
+  return result
+end
+
+function a4_rb_add(rb, numeric)
+  local offset = rb.offset
+  rb.offset = rb.offset + 1
+  if rb.offset > table.getn(rb.data) then
+    rb.offset = 1
+  end
+  rb.data[offset] = { numeric, os.time() }
+end
+
+function a4_rb_list(rb, newer_than)
+  local result = {}
+  for _, v in pairs(rb.data) do
+    if v[2] > newer_than then
+      result[table.concat(v[1], '\0')] = v[1]
+    end
+  end
+  return result
+end
+
 function a4_log_msg(channel, numeric, message)
   if not a4_is_stats_channel(channel) then
     return
@@ -240,6 +267,19 @@ function a4_log_msg_async(seen, quotereset, uarg)
   end
 
   table.insert(updates, "rating = rating + " .. rating_delta)
+
+  -- relations
+  if not a4_channelstate[channel]["lastmsgs"] then
+    a4_channelstate[channel]["lastmsgs"] = a4_rb_new(10)
+  end
+
+  a4_rb_add(a4_channelstate[channel]["lastmsgs"], { a4_getaccount(numeric), a4_getaccountid(numeric) })
+
+  for _, k in pairs(a4_rb_list(a4_channelstate[channel]["lastmsgs"], os.time() - 120)) do
+    if a4_getaccount(numeric) ~= k[1] or a4_getaccountid(numeric) ~= k[2] then
+      a4_update_relation(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), k[1], k[2])
+    end
+  end
 
   -- do skitzo checking
   if a4_channelstate[channel]["skitzonumeric"] == numeric then
