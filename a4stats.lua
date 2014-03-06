@@ -306,12 +306,11 @@ function a4_log_msg_async(seen, quotereset, uarg)
       table.insert(updates, "last = '" .. a4_escape_string("ACTION " .. message) .. "'")
 
       local slaps = false
-      local target, targetnumeric
+      local targetnumeric
       for nick in string.gmatch(message,'%S+') do
-        target = irc_getnickbynick(nick)
+        targetnumeric = irc_fastgetnickbynick(nick, { nickpusher.numeric })
 
-        if target then
-          targetnumeric = target.numeric
+        if targetnumeric then
 
           if irc_nickonchan(targetnumeric, channel) then
             if not slaps then
@@ -337,12 +336,11 @@ function a4_log_msg_async(seen, quotereset, uarg)
     end
   end
 
-  local target, targetnumeric
+  local targetnumeric
   for nick in string.gmatch(message,'%S+') do
-    target = irc_getnickbynick(nick)
+    targetnumeric = irc_fastgetnickbynick(nick, { nickpusher.numeric })
 
-    if target then
-      targetnumeric = target.numeric
+    if targetnumeric then
 
       if irc_nickonchan(targetnumeric, channel) then    
         local highlight = { "highlights = highlights + 1" }
@@ -354,7 +352,7 @@ function a4_log_msg_async(seen, quotereset, uarg)
 
   if quotereset == 0 or (os.time() - quotereset > 7200 and math.random(100) > 70 and string.len(message) > 20 and string.len(message) < 200) then
     if action then
-      quote = "* " .. irc_getnickbynumeric(numeric).nick .. " " .. message
+      quote = "* " .. irc_fastgetnickbynumeric(numeric, { nickpusher.nick }) .. " " .. message
     else
       quote = message
     end
@@ -412,10 +410,10 @@ function a4_log_msg_async(seen, quotereset, uarg)
 end
 
 function a4_getaccountid(numeric)
-  local nick = irc_getnickbynumeric(numeric)
+  local nickid = irc_fastgetnickbynumeric(numeric, { nickpusher.accountid })
 
-  if nick.accountid then
-    return nick.accountid
+  if nickid then
+    return nickid
   else
     return 0
   end
@@ -435,10 +433,10 @@ function a4_getaccount(numeric)
 end
 
 function a4_touchuser(updates, numeric)
-  local nick = irc_getnickbynumeric(numeric)
+  local nick = irc_fastgetnickbynumeric(numeric, { nickpusher.nick })
 
   table.insert(updates, "accountid = '" .. a4_getaccountid(numeric) .. "'")
-  table.insert(updates, "curnick = '" .. a4_escape_string(nick.nick) .. "'")
+  table.insert(updates, "curnick = '" .. a4_escape_string(nick) .. "'")
   table.insert(updates, "seen = " .. os.time())
 end
 
@@ -492,12 +490,12 @@ function irc_ondeop(channel, numeric, victimnumeric)
     return
   end
 
-  local victim = irc_getnickbynumeric(victimnumeric)
+  local victim = irc_fastgetnickbynumeric(victimnumeric, { nickpusher.nick })
 
   updates = {}
   a4_touchuser(updates, numeric)
   table.insert(updates, "deops = deops + 1")
-  table.insert(updates, "last = '" .. a4_escape_string("MODE -o " .. victim.nick) .. "'")
+  table.insert(updates, "last = '" .. a4_escape_string("MODE -o " .. victim) .. "'")
   a4_update_user(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), updates);
 end
 
@@ -520,13 +518,13 @@ function irc_onkick(channel, kicked_numeric, kicker_numeric, message)
   updates = {}
   a4_touchuser(updates, kicker_numeric)
   table.insert(updates, "kicks = kicks + 1")
-  table.insert(updates, "last = '" .. a4_escape_string("KICK " .. irc_getnickbynumeric(kicked_numeric).nick .. " " .. message) .. "'")
+  table.insert(updates, "last = '" .. a4_escape_string("KICK " .. irc_fastgetnickbynumeric(kicked_numeric, { nickpusher.nick }) .. " " .. message) .. "'")
   a4_update_user(a4_getchannelid(channel), a4_getaccount(kicker_numeric), a4_getaccountid(kicker_numeric), updates);
 
   updates = {}
   a4_touchuser(updates, kicked_numeric)
   table.insert(updates, "kicked = kicked + 1")
-  table.insert(updates, "last = '" .. a4_escape_string("KICKED " .. irc_getnickbynumeric(kicker_numeric).nick .. " " .. message) .. "'")
+  table.insert(updates, "last = '" .. a4_escape_string("KICKED " .. irc_fastgetnickbynumeric(kicker_numeric, { nickpusher.nick }) .. " " .. message) .. "'")
   a4_update_user(a4_getchannelid(channel), a4_getaccount(kicked_numeric), a4_getaccountid(kicked_numeric), updates);
 
   a4_add_kick(a4_getchannelid(channel), a4_getaccount(kicker_numeric), a4_getaccountid(kicker_numeric), a4_getaccount(kicked_numeric), a4_getaccountid(kicked_numeric), message)
