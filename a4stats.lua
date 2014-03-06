@@ -260,6 +260,8 @@ function a4_log_msg_async(seen, quotereset, uarg)
   updates = {}
   a4_touchuser(updates, numeric)
 
+  local hour = math.floor(os.time() / 3600) % 24
+
   if os.time() - seen > 600 then
     rating_delta = 120
   else
@@ -324,6 +326,9 @@ function a4_log_msg_async(seen, quotereset, uarg)
             a4_update_user(a4_getchannelid(channel), a4_getaccount(targetnumeric), a4_getaccountid(targetnumeric), slapped)   
           end
         end
+
+        a4_add_line(channel, hour)
+        a4_update_user(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), updates)
 
         return
       end
