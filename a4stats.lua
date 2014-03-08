@@ -150,7 +150,7 @@ function onnterfacer(command, ...)
 end
 
 function a4_is_stats_channel(channel)
-  return irc_nickonchan(a4_bot, channel)
+  return a4_channels[irctolowerascii(channel)]
 end
 
 function a4_getchannelid(channel)
@@ -167,15 +167,12 @@ function a4_fetch_channel_cb(id, name, active, uarg)
   end
 
   if active == 1 then
-    a4_join_channel(id, name)
-  elseif a4_is_stats_channel(name) then
-    a4_part_channel(name)
+    a4_channels[irctolowerascii(name)] = id
+  else
+    a4_channels[irctolowerascii(name)] = nil
   end
-end
 
-function a4_join_channel(id, channel)
-  irc_localjoin(a4_bot, channel)
-  a4_channels[irctolowerascii(channel)] = id
+  a4_check_channel(name)
 end
 
 function a4_int_enable_channel(channel)
@@ -183,14 +180,28 @@ function a4_int_enable_channel(channel)
   a4_fetch_channels("a4_fetch_channel_cb", {})
 end
 
-function a4_part_channel(channel)
-  irc_localpart(a4_bot, channel)
-  a4_channels[irctolowerascii(channel)] = nil
-end
-
 function a4_int_disable_channel(channel, part)
   a4_disable_channel(channel)
   a4_fetch_channels("a4_fetch_channel_cb", {})
+end
+
+function a4_check_channel(channel)
+  local only_services = true
+  for x in channelusers_iter(channel, { nickpusher.isservice }) do
+    if not x[1] then
+      only_services = false
+      break
+    end
+  end
+
+  local stats_channel = a4_is_stats_channel(channel)
+  local service_onchan = irc_nickonchan(a4_bot, channel)
+
+  if (only_services or not stats_channel) and service_onchan then
+    irc_localpart(a4_bot, channel)
+  elseif (not only_services and stats_channel) and not service_onchan then
+    irc_localjoin(a4_bot, channel)
+  end
 end
 
 function a4_notice(numeric, text)
@@ -440,6 +451,10 @@ function a4_touchuser(updates, numeric)
   table.insert(updates, "seen = " .. os.time())
 end
 
+function irc_onjoin(channel, numeric)
+  a4_check_channel(channel)
+end
+
 function irc_ontopic(channel, numeric, message)
   if not numeric then
     return
@@ -528,6 +543,9 @@ function irc_onkick(channel, kicked_numeric, kicker_numeric, message)
   a4_update_user(a4_getchannelid(channel), a4_getaccount(kicked_numeric), a4_getaccountid(kicked_numeric), updates);
 
   a4_add_kick(a4_getchannelid(channel), a4_getaccount(kicker_numeric), a4_getaccountid(kicker_numeric), a4_getaccount(kicked_numeric), a4_getaccountid(kicked_numeric), message)
+
+  -- check if he wasn't the last user in the channel
+  a4_check_channel(channel)
 end
 
 function irc_onpart(channel, numeric, message)
@@ -545,6 +563,9 @@ function irc_onpart(channel, numeric, message)
   a4_touchuser(updates, numeric)
   table.insert(updates, "last = '" .. a4_escape_string("PART " .. message) .. "'")
   a4_update_user(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), updates)
+
+  -- check if he wasn't the last user in the channel
+  a4_check_channel(channel)
 end
 
 function irc_onprequit(numeric)
@@ -554,6 +575,9 @@ function irc_onprequit(numeric)
       a4_touchuser(updates, numeric)
       table.insert(updates, "last = 'QUIT'")
       a4_update_user(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), updates)
+
+      -- check if he wasn't the last user in the channel
+      a4_check_channel(channel)
     end
   end
 end
