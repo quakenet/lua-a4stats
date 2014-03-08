@@ -282,11 +282,12 @@ function a4_log_msg_async(seen, quotereset, uarg)
     "fick", "schlampe", "hure", "schwuchtel", "fotz", "wichs", "wix", --german
   }
 
-  updates = {}
+  local updates = {}
   a4_touchuser(updates, numeric)
 
   local hour = math.floor(os.time() / 3600) % 24
 
+  local rating_delta
   if os.time() - seen > 600 then
     rating_delta = 120
   else
@@ -376,6 +377,7 @@ function a4_log_msg_async(seen, quotereset, uarg)
   end
 
   if quotereset == 0 or (os.time() - quotereset > 7200 and math.random(100) > 70 and string.len(message) > 20 and string.len(message) < 200) then
+    local quote
     if action then
       quote = "* " .. irc_fastgetnickbynumeric(numeric, { nickpusher.nick }) .. " " .. message
     else
@@ -447,6 +449,7 @@ end
 function a4_getaccount(numeric)
   local nick = irc_getnickbynumeric(numeric)
 
+  local id
   if nick.accountid then
     id = nick.account
   else
@@ -480,7 +483,7 @@ function irc_ontopic(channel, numeric, message)
     return
   end
 
-  updates = {}
+  local updates = {}
   a4_touchuser(updates, numeric)
   table.insert(updates, "last = '" .. a4_escape_string("TOPIC " .. message) .. "'")
   a4_update_user(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), updates)
@@ -501,7 +504,7 @@ function irc_onop(channel, numeric, victimnumeric)
 
   local victim = irc_getnickbynumeric(victimnumeric)
 
-  updates = {}
+  local updates = {}
   a4_touchuser(updates, numeric)
   table.insert(updates, "ops = ops + 1")
   table.insert(updates, "last = '" .. a4_escape_string("MODE +o " .. victim.nick) .. "'")
@@ -521,7 +524,7 @@ function irc_ondeop(channel, numeric, victimnumeric)
 
   local victim = irc_fastgetnickbynumeric(victimnumeric, { nickpusher.nick })
 
-  updates = {}
+  local updates = {}
   a4_touchuser(updates, numeric)
   table.insert(updates, "deops = deops + 1")
   table.insert(updates, "last = '" .. a4_escape_string("MODE -o " .. victim) .. "'")
@@ -544,13 +547,13 @@ function irc_onkick(channel, kicked_numeric, kicker_numeric, message)
     return
   end
 
-  updates = {}
+  local updates = {}
   a4_touchuser(updates, kicker_numeric)
   table.insert(updates, "kicks = kicks + 1")
   table.insert(updates, "last = '" .. a4_escape_string("KICK " .. irc_fastgetnickbynumeric(kicked_numeric, { nickpusher.nick }) .. " " .. message) .. "'")
   a4_update_user(a4_getchannelid(channel), a4_getaccount(kicker_numeric), a4_getaccountid(kicker_numeric), updates);
 
-  updates = {}
+  local updates = {}
   a4_touchuser(updates, kicked_numeric)
   table.insert(updates, "kicked = kicked + 1")
   table.insert(updates, "last = '" .. a4_escape_string("KICKED " .. irc_fastgetnickbynumeric(kicker_numeric, { nickpusher.nick }) .. " " .. message) .. "'")
@@ -570,7 +573,7 @@ function irc_onpart(channel, numeric, message)
     message = ""
   end
 
-  updates = {}
+  local updates = {}
   a4_touchuser(updates, numeric)
   table.insert(updates, "last = '" .. a4_escape_string("PART " .. message) .. "'")
   a4_update_user(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), updates)
@@ -579,7 +582,7 @@ end
 function irc_onprequit(numeric)
   for channel, _ in pairs(a4_channels) do
     if irc_nickonchan(numeric, channel) then
-      updates = {}
+      local updates = {}
       a4_touchuser(updates, numeric)
       table.insert(updates, "last = 'QUIT'")
       a4_update_user(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), updates)
@@ -590,7 +593,7 @@ end
 function irc_onrename(numeric, oldnick)
   for channel, _ in pairs(a4_channels) do
     if irc_nickonchan(numeric, channel) then
-      updates = {}
+      local updates = {}
       a4_touchuser(updates, numeric)
       table.insert(updates, "last = 'NICK'")
       a4_update_user(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), updates)
