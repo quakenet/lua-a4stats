@@ -23,11 +23,14 @@ local BOTACCOUNT = "a4stats"
 local BOTACCOUNTID = 0
 
 local a4_bot
+local a4_sched = Scheduler()
 local a4_channels = {}
 local a4_channelstate = {}
 
 function onload()
   onconnect()
+
+  a4_sched:add(1800, a4_sched_check_channels)
 end
 
 function onconnect()
@@ -183,6 +186,14 @@ end
 function a4_int_disable_channel(channel, part)
   a4_disable_channel(channel)
   a4_fetch_channels("a4_fetch_channel_cb", {})
+end
+
+function a4_sched_check_channels()
+  for channel, _ in pairs(a4_channels) do
+    a4_check_channel(channel)
+  end
+
+  a4_sched:add(1800, a4_sched_check_channels)
 end
 
 function a4_check_channel(channel)
@@ -543,9 +554,6 @@ function irc_onkick(channel, kicked_numeric, kicker_numeric, message)
   a4_update_user(a4_getchannelid(channel), a4_getaccount(kicked_numeric), a4_getaccountid(kicked_numeric), updates);
 
   a4_add_kick(a4_getchannelid(channel), a4_getaccount(kicker_numeric), a4_getaccountid(kicker_numeric), a4_getaccount(kicked_numeric), a4_getaccountid(kicked_numeric), message)
-
-  -- check if he wasn't the last user in the channel
-  a4_check_channel(channel)
 end
 
 function irc_onpart(channel, numeric, message)
@@ -563,9 +571,6 @@ function irc_onpart(channel, numeric, message)
   a4_touchuser(updates, numeric)
   table.insert(updates, "last = '" .. a4_escape_string("PART " .. message) .. "'")
   a4_update_user(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), updates)
-
-  -- check if he wasn't the last user in the channel
-  a4_check_channel(channel)
 end
 
 function irc_onprequit(numeric)
@@ -575,9 +580,6 @@ function irc_onprequit(numeric)
       a4_touchuser(updates, numeric)
       table.insert(updates, "last = 'QUIT'")
       a4_update_user(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), updates)
-
-      -- check if he wasn't the last user in the channel
-      a4_check_channel(channel)
     end
   end
 end
