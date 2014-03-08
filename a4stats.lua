@@ -447,14 +447,13 @@ function a4_getaccountid(numeric)
 end
 
 function a4_getaccount(numeric)
-  local nick = irc_getnickbynumeric(numeric)
-
   local id
-  if nick.accountid then
-    id = nick.account
+  local accountid, account = irc_fastgetnickbynumeric(numeric, { nickpusher.accountid, nickpusher.authname })
+
+  if accountid then
+    id = account
   else
-    local fullhost = a4_maskhost(irc_getvisiblehostmask(numeric))
-    id = fullhost
+    id = a4_maskhost(irc_getvisiblehostmask(numeric))
   end
 
   return id
@@ -502,12 +501,12 @@ function irc_onop(channel, numeric, victimnumeric)
     return
   end
 
-  local victim = irc_getnickbynumeric(victimnumeric)
+  local victim = irc_fastgetnickbynumeric(victimnumeric, { nickpusher.nick })
 
   local updates = {}
   a4_touchuser(updates, numeric)
   table.insert(updates, "ops = ops + 1")
-  table.insert(updates, "last = '" .. a4_escape_string("MODE +o " .. victim.nick) .. "'")
+  table.insert(updates, "last = '" .. a4_escape_string("MODE +o " .. victim) .. "'")
   a4_update_user(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), updates);
 end
 
