@@ -277,7 +277,10 @@ function a4_log_msg_async(seen, quotereset, uarg)
 
   local smileyhappy = {":)", ":-)", ":p", ":-p", ":P", ":-P", ":D", ":-D", ":}", ":-}", ":]", ":-]", ";)", ";-)", ";p", ";-p", ";P", ";-P", ";D", ";-D", ";}", ";-}", ";]", ";-]"}
   local smileysad = {":(", ":-(", ":c", ":-c", ":C", ":-C", ":[", ":-[", ":{", ":-{", ";(", ";-(", ";c", ";-c", ";C", ";-C", ";[", ";-[", ";{", ";-{"}
-  local foulmessage = {"fuck", "fick", "bitch", "shit", "cock", "dick", "stfu"}
+  local foulmessage = {
+    "fuck", "bitch", "shit", "cock", "dick", "stfu", "idiot", "moron", "cunt", "fag", "nigger", "prick", "retard", "twat", "wanker", "bastard", -- english
+    "fick", "schlampe", "hure", "schwuchtel", "fotz", "wichs", "wix", --german
+  }
 
   updates = {}
   a4_touchuser(updates, numeric)
