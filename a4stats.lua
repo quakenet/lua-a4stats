@@ -189,11 +189,8 @@ function a4_int_disable_channel(channel, part)
 end
 
 function a4_sched_check_channels()
-  for channel, _ in pairs(a4_channels) do
-    a4_check_channel(channel)
-  end
-
   a4_sched:add(1800, a4_sched_check_channels)
+  a4_fetch_channels("a4_fetch_channel_cb", {})
 end
 
 function a4_check_channel(channel)
