@@ -561,7 +561,7 @@ end
 function irc_onpart(channel, numeric, message)
   channel = irctolowerascii(channel)
 
-  if not a4_is_stats_channel(channel) then
+  if not a4_is_stats_channel(channel) or not irc_nickonchan(numeric, channel) then
     return
   end
 
