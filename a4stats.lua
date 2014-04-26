@@ -18,8 +18,8 @@
 -- frontend
 -- clean up topics/kicks periodically
 
-local BOTNICK = "a4stats"
-local BOTACCOUNT = "a4stats"
+local BOTNICK = "D"
+local BOTACCOUNT = "D"
 local BOTACCOUNTID = 0
 
 local a4_bot
@@ -34,7 +34,7 @@ function onload()
 end
 
 function onconnect()
-  a4_bot = irc_localregisteruserid(BOTNICK, "a4stats", "channel.statistics", "Channel statistics service", BOTACCOUNT, BOTACCOUNTID, "+ikXr", statshandler)
+  a4_bot = irc_localregisteruserid(BOTNICK, "stats", "stats.quakenet.org", "Channel Statistics Service", BOTACCOUNT, BOTACCOUNTID, "+ikXr", statshandler)
   a4_sync_channels()
 end
 
