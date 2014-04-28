@@ -338,29 +338,26 @@ function a4_log_msg(channel, numeric, message)
             a4_update_user(a4_getchannelid(channel), a4_getaccount(targetnumeric), a4_getaccountid(targetnumeric), slapped)   
           end
         end
-
-        a4_add_line(channel, hour)
-        -- exit 1
-        a4_fetch_user(a4_getchannelid(channel), account, accountid, "a4_log_msg_async", { updates, time, channel, nick, account, accountid, message })
-
-        return
       end
     else
+      -- ignore non-action CTCPs
       return
     end
-  end
+  else
+    table.insert(updates, "last = '" .. a4_escape_string("TEXT " .. message) .. "'")
 
-  -- highlights
-  local targetnumeric
-  for nick in string.gmatch(message,'%S+') do
-    targetnumeric = irc_fastgetnickbynick(nick, { nickpusher.numeric })
-
-    if targetnumeric then
-
-      if irc_nickonchan(targetnumeric, channel) then    
-        local highlight = { "highlights = highlights + 1" }
-
-        a4_update_user(a4_getchannelid(channel), a4_getaccount(targetnumeric), a4_getaccountid(targetnumeric), highlight)          
+    -- highlights, only for non-ACTIONs (those count as slaps)
+    local targetnumeric
+    for nick in string.gmatch(message,'%S+') do
+      targetnumeric = irc_fastgetnickbynick(nick, { nickpusher.numeric })
+  
+      if targetnumeric then
+  
+        if irc_nickonchan(targetnumeric, channel) then    
+          local highlight = { "highlights = highlights + 1" }
+  
+          a4_update_user(a4_getchannelid(channel), a4_getaccount(targetnumeric), a4_getaccountid(targetnumeric), highlight)          
+        end
       end
     end
   end
@@ -406,11 +403,8 @@ function a4_log_msg(channel, numeric, message)
   local _, count = string.gsub(message, "[A-Z!?]", "")
   table.insert(updates, "caps = caps + " .. count)
 
-  table.insert(updates, "last = '" .. a4_escape_string("TEXT " .. message) .. "'")
-
   a4_add_line(channel, hour)
 
-  -- exit 2
   a4_fetch_user(a4_getchannelid(channel), account, accountid, "a4_log_msg_async", { updates, time, channel, nick, account, accountid, message })
 end
 
