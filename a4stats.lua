@@ -264,14 +264,6 @@ function a4_log_msg(channel, numeric, message)
     return
   end
 
-  a4_fetch_user(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), "a4_log_msg_async", { channel, numeric, message})
-end
-
-function a4_log_msg_async(seen, quotereset, uarg)
-  local channel = uarg[1]
-  local numeric = uarg[2]
-  local message = uarg[3]
-
   local smileyhappy = {":)", ":-)", ":p", ":-p", ":P", ":-P", ":D", ":-D", ":}", ":-}", ":]", ":-]", ";)", ";-)", ";p", ";-p", ";P", ";-P", ";D", ";-D", ";}", ";-}", ";]", ";-]"}
   local smileysad = {":(", ":-(", ":c", ":-c", ":C", ":-C", ":[", ":-[", ":{", ":-{", ";(", ";-(", ";c", ";-c", ";C", ";-C", ";[", ";-[", ";{", ";-{"}
   local foulmessage = {
@@ -279,30 +271,27 @@ function a4_log_msg_async(seen, quotereset, uarg)
     "fick", "schlampe", "hure", "schwuchtel", "fotz", "wichs", "wix", --german
   }
 
+  -- prepare the data we need now, numeric could be invalid in fetch_user callback
+  local account = a4_getaccount(numeric)
+  local accountid = a4_getaccountid(numeric)
+  local nick = irc_fastgetnickbynumeric(numeric, { nickpusher.nick })
+  local time = os.time()
+  local hour = math.floor(time / 3600) % 24
+
   local updates = {}
   a4_touchuser(updates, numeric)
 
-  local hour = math.floor(os.time() / 3600) % 24
-
-  local rating_delta
-  if os.time() - seen > 600 then
-    rating_delta = 120
-  else
-    rating_delta = os.time() - seen
-  end
-
-  table.insert(updates, "rating = rating + " .. rating_delta)
 
   -- relations
   if not a4_channelstate[channel]["lastmsgs"] then
     a4_channelstate[channel]["lastmsgs"] = a4_rb_new(10)
   end
 
-  a4_rb_add(a4_channelstate[channel]["lastmsgs"], { a4_getaccount(numeric), a4_getaccountid(numeric) })
+  a4_rb_add(a4_channelstate[channel]["lastmsgs"], { account, accountid })
 
-  for _, k in pairs(a4_rb_list(a4_channelstate[channel]["lastmsgs"], os.time() - 120)) do
-    if a4_getaccount(numeric) ~= k[1] or a4_getaccountid(numeric) ~= k[2] then
-      a4_update_relation(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), k[1], k[2])
+  for _, k in pairs(a4_rb_list(a4_channelstate[channel]["lastmsgs"], time - 120)) do
+    if account ~= k[1] or accountid ~= k[2] then
+      a4_update_relation(a4_getchannelid(channel), account, accountid, k[1], k[2])
     end
   end
 
@@ -319,6 +308,7 @@ function a4_log_msg_async(seen, quotereset, uarg)
     a4_channelstate[channel]["skitzocounter"] = 0
   end
 
+  -- ctcp and actions are ignored, only count slaps
   local action = false
   local ctcp_command, ctcp_param = string.match(message, "\1(%a+) ([^\1]+)\1")
   if ctcp_command then
@@ -350,7 +340,8 @@ function a4_log_msg_async(seen, quotereset, uarg)
         end
 
         a4_add_line(channel, hour)
-        a4_update_user(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), updates)
+        -- exit 1
+        a4_fetch_user(a4_getchannelid(channel), account, accountid, "a4_log_msg_async", { updates, time, channel, nick, account, accountid, message })
 
         return
       end
@@ -359,6 +350,7 @@ function a4_log_msg_async(seen, quotereset, uarg)
     end
   end
 
+  -- highlights
   local targetnumeric
   for nick in string.gmatch(message,'%S+') do
     targetnumeric = irc_fastgetnickbynick(nick, { nickpusher.numeric })
@@ -371,18 +363,6 @@ function a4_log_msg_async(seen, quotereset, uarg)
         a4_update_user(a4_getchannelid(channel), a4_getaccount(targetnumeric), a4_getaccountid(targetnumeric), highlight)          
       end
     end
-  end
-
-  if quotereset == 0 or (os.time() - quotereset > 7200 and math.random(100) > 70 and string.len(message) > 20 and string.len(message) < 200) then
-    local quote
-    if action then
-      quote = "* " .. irc_fastgetnickbynumeric(numeric, { nickpusher.nick }) .. " " .. message
-    else
-      quote = message
-    end
-
-    table.insert(updates, "quote = '" .. a4_escape_string(quote) .. "'")
-    table.insert(updates, "quotereset = " .. os.time())
   end
 
   for _, s in pairs(smileyhappy) do
@@ -414,7 +394,6 @@ function a4_log_msg_async(seen, quotereset, uarg)
     table.insert(updates, "yelling = yelling + 1")
   end
 
-  local hour = math.floor(os.time() / 3600) % 24
   table.insert(updates, "h" .. hour .. " = h" .. hour .. " + 1")
 
   table.insert(updates, "lines = lines + 1")
@@ -430,7 +409,41 @@ function a4_log_msg_async(seen, quotereset, uarg)
   table.insert(updates, "last = '" .. a4_escape_string("TEXT " .. message) .. "'")
 
   a4_add_line(channel, hour)
-  a4_update_user(a4_getchannelid(channel), a4_getaccount(numeric), a4_getaccountid(numeric), updates)
+
+  -- exit 2
+  a4_fetch_user(a4_getchannelid(channel), account, accountid, "a4_log_msg_async", { updates, time, channel, nick, account, accountid, message })
+end
+
+function a4_log_msg_async(seen, quotereset, uarg)
+  local updates = uarg[1]
+  local time = uarg[2]
+  local channel = uarg[3]
+  local nick = uarg[4]
+  local account = uarg[5]
+  local accountid = uarg[6]
+  local message = uarg[7]
+
+  local rating_delta
+  if time - seen > 600 then
+    rating_delta = 120
+  else
+    rating_delta = time - seen
+  end
+
+  table.insert(updates, "rating = rating + " .. rating_delta)
+
+  if quotereset == 0 or (time - quotereset > 7200 and math.random(100) > 70 and string.len(message) > 20 and string.len(message) < 200) then
+    local quote
+    if action then
+      quote = "* " .. nick .. " " .. message
+    else
+      quote = message
+    end
+
+    table.insert(updates, "quote = '" .. a4_escape_string(quote) .. "'")
+    table.insert(updates, "quotereset = " .. time)
+  end
+  a4_update_user(a4_getchannelid(channel), account, accountid, updates)
 end
 
 function a4_getaccountid(numeric)
