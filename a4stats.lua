@@ -216,6 +216,40 @@ function a4_notice(numeric, text)
   irc_localnotice(a4_bot, numeric, text)
 end
 
+function a4_split_message(message)
+  message, _ = message:gsub("^ +", "")
+  message, _ = message:gsub("  +", " ")
+  message, _ = message:gsub(" +$", "")
+
+  local tokens = {}
+  for token in string.gmatch(message, "%S+") do
+    table.insert(tokens, token)
+  end
+
+  return tokens
+end
+
+function a4_cmd_addchan(numeric, channel, privacy)
+  if not privacy or privacy < 0 or privacy > 2 then
+    privacy = 1
+  end
+  a4_enable_channel(channel)
+  a4_set_privacy(channel, privacy)
+  a4_fetch_channels("a4_fetch_channel_cb", {})
+  a4_notice(numeric, "Done. Privacy = " .. privacy)
+end
+
+function a4_cmd_delchan(numeric, channel)
+  a4_disable_channel(channel)
+  a4_fetch_channels("a4_fetch_channel_cb", {})
+  a4_notice(numeric, "Done.")
+end
+
+function a4_cmd_help(numeric)
+  a4_notice(numeric, "addchan <chan> <privacy> - Privacy is 0 (public), 1 (presence), or 2 (Q known)")
+  a4_notice(numeric, "delchan <chan>")
+end
+
 function statshandler(target, revent, ...)
   if revent == "irc_onchanmsg" then
     local numeric, channel, message = ...
@@ -227,6 +261,28 @@ function statshandler(target, revent, ...)
     end
 
     a4_log_msg(channel, numeric, message)
+  elseif revent == "irc_onmsg" then
+    local numeric, message = ...
+
+    if not ontlz(numeric) then
+      return
+    end
+
+    local tokens = a4_split_message(message)
+    local command = tokens[1]:lower()
+
+    if not command then
+      return
+    end
+
+    if command == "addchan" then
+      a4_cmd_addchan(numeric, tokens[2], tonumber(tokens[3]))
+    elseif command == "delchan" then
+      a4_cmd_delchan(numeric, tokens[2])
+    elseif command == "showcommands" or command == "help" then
+      a4_cmd_help(numeric)
+    end
+
   end
 end
 
