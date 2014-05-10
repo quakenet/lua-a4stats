@@ -405,38 +405,21 @@ function a4_log_msg(channel, numeric, message)
 
   a4_add_line(channel, hour)
 
-  a4_fetch_user(a4_getchannelid(channel), account, accountid, "a4_log_msg_async", { updates, time, channel, nick, account, accountid, message })
-end
+  table.insert(updates, "rating = (CASE WHEN " .. time .. " - seen > 600 THEN 120 ELSE " .. time .. " - seen END)")
 
-function a4_log_msg_async(seen, quotereset, uarg)
-  local updates = uarg[1]
-  local time = uarg[2]
-  local channel = uarg[3]
-  local nick = uarg[4]
-  local account = uarg[5]
-  local accountid = uarg[6]
-  local message = uarg[7]
-
-  local rating_delta
-  if time - seen > 600 then
-    rating_delta = 120
-  else
-    rating_delta = time - seen
-  end
-
-  table.insert(updates, "rating = rating + " .. rating_delta)
-
-  if quotereset == 0 or (time - quotereset > 7200 and math.random(100) > 70 and string.len(message) > 20 and string.len(message) < 200) then
-    local quote
+  if string.len(message) > 20 and string.len(message) < 200 then
+    local quote, random
+    random = math.random(100)
     if action then
       quote = "* " .. nick .. " " .. message
     else
       quote = message
     end
-
-    table.insert(updates, "quote = '" .. a4_escape_string(quote) .. "'")
-    table.insert(updates, "quotereset = " .. time)
+    quote = a4_escape_string(quote)
+    table.insert(updates, "quote = (CASE WHEN quotereset = 0 OR (" .. time .. " - quotereset > 7200 AND " .. random .. "> 70) THEN '" .. quote .. "' ELSE quote END)")
+    table.insert(updates, "quotereset = (CASE WHEN quotereset = 0 OR (" .. time .. " - quotereset > 7200 AND " .. random .. " > 70) THEN " .. time .. " ELSE quotereset END)")
   end
+
   a4_update_user(a4_getchannelid(channel), account, accountid, updates)
 end
 
