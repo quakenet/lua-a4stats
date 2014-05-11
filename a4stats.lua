@@ -21,6 +21,7 @@
 local BOTNICK = "D"
 local BOTACCOUNT = "D"
 local BOTACCOUNTID = 0
+local COMMITDELAY = 5
 
 local a4_bot
 local a4_sched = Scheduler()
@@ -31,6 +32,12 @@ function onload()
   onconnect()
 
   a4_sched:add(1800, a4_sched_check_channels)
+  a4_sched:add(COMMITDELAY, a4_sched_commit)
+  a4_db_begin()
+end
+
+function onunload()
+  a4_db_commit()
 end
 
 function onconnect()
@@ -191,6 +198,12 @@ end
 function a4_sched_check_channels()
   a4_sched:add(1800, a4_sched_check_channels)
   a4_fetch_channels("a4_fetch_channel_cb", {})
+end
+
+function a4_sched_commit()
+  a4_sched:add(COMMITDELAY, a4_sched_commit)
+  a4_db_commit()
+  a4_db_begin()
 end
 
 function a4_check_channel(channel)
