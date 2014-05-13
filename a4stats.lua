@@ -250,6 +250,24 @@ function a4_cmd_help(numeric)
   a4_notice(numeric, "delchan <chan>")
 end
 
+function getuser(numeric)
+    local nick, accountid, authname, umodes = irc_fastgetnickbynumeric(numeric, { nickpusher.nick, nickpusher.accountid, nickpusher.authname, nickpusher.umodes })
+    return { numeric=numeric, nick=nick, accountid=accountid, authname=authname, umodes=umodes }
+end
+
+function isoper(target)
+  -- returns boolean true of usermods contains +o or +k
+  if type(target.umodes) ~= 'string' then
+    return false
+  end
+  for i,m in ipairs({'o', 'k'}) do
+    if target.umodes:find(m) ~= nil then
+      return true
+    end
+  end
+  return false
+end
+
 function statshandler(target, revent, ...)
   if revent == "irc_onchanmsg" then
     local numeric, channel, message = ...
@@ -264,7 +282,9 @@ function statshandler(target, revent, ...)
   elseif revent == "irc_onmsg" then
     local numeric, message = ...
 
-    if not ontlz(numeric) then
+    local user = getuser(numeric)
+
+    if not isoper(user) then
       return
     end
 
