@@ -302,10 +302,12 @@ function statshandler(target, revent, ...)
     end
 
     local tokens = a4_split_message(message)
-    local command = tokens[1]:lower()
+    local command = tokens[1]
 
     if not command then
       return
+    else
+      command = command:lower()
     end
 
     if command == "addchan" then
