@@ -481,7 +481,7 @@ function a4_log_msg(channel, numeric, message)
 
   a4_add_line(channel, hour)
 
-  table.insert(updates, "rating = (CASE WHEN " .. time .. " - seen > 600 THEN 120 ELSE " .. time .. " - seen END)")
+  table.insert(updates, "rating = rating + (CASE WHEN " .. time .. " - seen > 600 THEN 120 ELSE " .. time .. " - seen END)")
 
   if string.len(message) > 20 and string.len(message) < 200 then
     local quote, random
