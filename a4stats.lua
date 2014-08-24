@@ -22,11 +22,13 @@ local BOTNICK = "D"
 local BOTACCOUNT = "D"
 local BOTACCOUNTID = 0
 local COMMITDELAY = 5
+local CHANSERV = "Q"
 
 local a4_bot
 local a4_sched = Scheduler()
 local a4_channels = {}
 local a4_channelstate = {}
+local chanserv_online = true
 
 function onload()
   onconnect()
@@ -197,6 +199,9 @@ end
 
 function a4_sched_check_channels()
   a4_sched:add(1800, a4_sched_check_channels)
+  chanserv_online = true
+  local chanserv_nick = irc_fastgetnickbynick(CHANSERV, { nickpusher.nick })
+  chanserv_online = chanserv_nick == CHANSERV
   a4_fetch_channels("a4_fetch_channel_cb", {})
 end
 
@@ -208,9 +213,16 @@ end
 
 function a4_check_channel(channel)
   local only_services = true
-  for x in channelusers_iter(channel, { nickpusher.isservice }) do
-    if not x[1] then
+  local chanserv_inchan = false
+  
+  for x in channelusers_iter(channel, { nickpusher.nick, nickpusher.isservice }) do
+    if x[1] == CHANSERV then
+      chanserv_inchan = true
+    end
+    if not x[2] then
       only_services = false
+    end
+    if chanserv_inchan and not only_services then
       break
     end
   end
@@ -218,9 +230,11 @@ function a4_check_channel(channel)
   local stats_channel = a4_is_stats_channel(channel)
   local service_onchan = irc_nickonchan(a4_bot, channel)
 
-  if (only_services or not stats_channel) and service_onchan then
+  if (not chanserv_inchan and chanserv_online) and stats_channel and service_onchan then
     irc_localpart(a4_bot, channel)
-  elseif (not only_services and stats_channel) and not service_onchan then
+  elseif (only_services or not stats_channel) and service_onchan then
+    irc_localpart(a4_bot, channel)
+  elseif (not only_services and stats_channel) and chanserv_inchan and not service_onchan then
     irc_localjoin(a4_bot, channel)
   end
 end
